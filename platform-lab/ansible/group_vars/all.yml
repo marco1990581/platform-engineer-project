@@ -1,0 +1,31 @@
+---
+tool_versions:
+  terraform: "1.13.3"
+  kubectl: "v1.34.0"
+  kind: "v0.30.0"
+  helm: "v3.19.0"
+  go: "1.24.0"
+
+architecture_map:
+  x86_64: amd64
+  aarch64: arm64
+  arm64: arm64
+
+tool_checksums:
+  terraform:
+    amd64: "71fc43d92ea09907be5d416d2405a6a9c2d1ceaed633f5e175c0af26e8c4b365"
+    arm64: "fa82fb1b08354573467557f33e6a15e7f9e1bba74eb15492f151ca27525d2acc"
+  kubectl:
+    amd64: "cfda68cba5848bc3b6c6135ae2f20ba2c78de20059f68789c090166d6abc3e2c"
+    arm64: "00b182d103a8a73da7a4d11e7526d0543dcf352f06cc63a1fde25ce9243f49a0"
+  kind:
+    amd64: "517ab7fc89ddeed5fa65abf71530d90648d9638ef0c4cde22c2c11f8097b8889"
+    arm64: "7ea2de9d2d190022ed4a8a4e3ac0636c8a455e460b9a13ccf19f15d07f4f00eb"
+  helm:
+    amd64: "a7f81ce08007091b86d8bd696eb4d86b8d0f2e1b9f6c714be62f82f96a594496"
+    arm64: "440cf7add0aee27ebc93fada965523c1dc2e0ab340d4348da2215737fc0d76ad"
+  go:
+    amd64: "dea9ca38a0b852a74e81c26134671af7c0fbe65d81b0dc1c5bfe22cf7d4c8858"
+    arm64: "c3fa6d16ffa261091a5617145553c71d21435ce547e44cc6dfb7470865527cc7"
+
+docker_key_fingerprint: "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"

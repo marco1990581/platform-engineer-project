@@ -1,0 +1,244 @@
+---
+- name: Configure the local platform development environment
+  hosts: local
+  become: true
+  gather_facts: true
+
+  vars:
+    download_dir: "{{ bootstrap_home }}/.cache/platform-lab"
+    platform_arch: "{{ architecture_map[ansible_architecture] | default('') }}"
+    terraform_archive: "terraform_{{ tool_versions.terraform }}_linux_{{ platform_arch }}.zip"
+    helm_archive: "helm-{{ tool_versions.helm }}-linux-{{ platform_arch }}.tar.gz"
+    go_archive: "go{{ tool_versions.go }}.linux-{{ platform_arch }}.tar.gz"
+
+  pre_tasks:
+    - name: Validate the operating system
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution in ['Debian', 'Ubuntu']
+        fail_msg: "Only Debian and Ubuntu hosts are supported."
+
+    - name: Validate the architecture
+      ansible.builtin.assert:
+        that:
+          - platform_arch | length > 0
+        fail_msg: "Only amd64 and arm64 hosts are supported."
+
+    - name: Warn when the host has limited memory
+      ansible.builtin.debug:
+        msg: "Less than 4 GiB RAM detected. Install tools now, but delay Kind cluster creation until more memory is available."
+      when: ansible_memtotal_mb < 4096
+
+    - name: Create the unprivileged download directory
+      ansible.builtin.file:
+        path: "{{ download_dir }}"
+        state: directory
+        mode: "0700"
+      become: false
+
+  tasks:
+    - name: Install base packages
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - git
+          - gnupg
+          - jq
+          - unzip
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Create the Docker keyring directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Download the Docker repository signing key
+      ansible.builtin.get_url:
+        url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+
+    - name: Read the Docker repository key fingerprint
+      ansible.builtin.command: gpg --show-keys --with-colons /etc/apt/keyrings/docker.asc
+      changed_when: false
+      register: docker_key
+
+    - name: Verify the Docker repository key fingerprint
+      ansible.builtin.assert:
+        that:
+          - docker_key_fingerprint in docker_key.stdout
+        fail_msg: "The Docker repository signing key fingerprint is unexpected."
+
+    - name: Configure the Docker package repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch={{ platform_arch }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+        filename: docker
+        state: present
+
+    - name: Install Docker Engine
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Enable the Docker service
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+      when: ansible_service_mgr == 'systemd'
+
+    - name: Allow the bootstrap user to use Docker
+      ansible.builtin.user:
+        name: "{{ bootstrap_user }}"
+        groups: docker
+        append: true
+
+    - name: Download Terraform
+      ansible.builtin.get_url:
+        url: "https://releases.hashicorp.com/terraform/{{ tool_versions.terraform }}/{{ terraform_archive }}"
+        dest: "{{ download_dir }}/{{ terraform_archive }}"
+        checksum: "sha256:{{ tool_checksums.terraform[platform_arch] }}"
+        mode: "0600"
+      become: false
+
+    - name: Create the Terraform extraction directory
+      ansible.builtin.file:
+        path: "{{ download_dir }}/terraform-{{ tool_versions.terraform }}"
+        state: directory
+        mode: "0700"
+      become: false
+
+    - name: Extract Terraform
+      ansible.builtin.unarchive:
+        src: "{{ download_dir }}/{{ terraform_archive }}"
+        dest: "{{ download_dir }}/terraform-{{ tool_versions.terraform }}"
+        remote_src: true
+        creates: "{{ download_dir }}/terraform-{{ tool_versions.terraform }}/terraform"
+      become: false
+
+    - name: Install Terraform
+      ansible.builtin.copy:
+        src: "{{ download_dir }}/terraform-{{ tool_versions.terraform }}/terraform"
+        dest: /usr/local/bin/terraform
+        remote_src: true
+        mode: "0755"
+
+    - name: Download kubectl
+      ansible.builtin.get_url:
+        url: "https://dl.k8s.io/release/{{ tool_versions.kubectl }}/bin/linux/{{ platform_arch }}/kubectl"
+        dest: "{{ download_dir }}/kubectl-{{ tool_versions.kubectl }}"
+        checksum: "sha256:{{ tool_checksums.kubectl[platform_arch] }}"
+        mode: "0600"
+      become: false
+
+    - name: Install kubectl
+      ansible.builtin.copy:
+        src: "{{ download_dir }}/kubectl-{{ tool_versions.kubectl }}"
+        dest: /usr/local/bin/kubectl
+        remote_src: true
+        mode: "0755"
+
+    - name: Download Kind
+      ansible.builtin.get_url:
+        url: "https://kind.sigs.k8s.io/dl/{{ tool_versions.kind }}/kind-linux-{{ platform_arch }}"
+        dest: "{{ download_dir }}/kind-{{ tool_versions.kind }}"
+        checksum: "sha256:{{ tool_checksums.kind[platform_arch] }}"
+        mode: "0600"
+      become: false
+
+    - name: Install Kind
+      ansible.builtin.copy:
+        src: "{{ download_dir }}/kind-{{ tool_versions.kind }}"
+        dest: /usr/local/bin/kind
+        remote_src: true
+        mode: "0755"
+
+    - name: Download Helm
+      ansible.builtin.get_url:
+        url: "https://get.helm.sh/{{ helm_archive }}"
+        dest: "{{ download_dir }}/{{ helm_archive }}"
+        checksum: "sha256:{{ tool_checksums.helm[platform_arch] }}"
+        mode: "0600"
+      become: false
+
+    - name: Create the Helm extraction directory
+      ansible.builtin.file:
+        path: "{{ download_dir }}/helm-{{ tool_versions.helm }}"
+        state: directory
+        mode: "0700"
+      become: false
+
+    - name: Extract Helm
+      ansible.builtin.unarchive:
+        src: "{{ download_dir }}/{{ helm_archive }}"
+        dest: "{{ download_dir }}/helm-{{ tool_versions.helm }}"
+        remote_src: true
+        creates: "{{ download_dir }}/helm-{{ tool_versions.helm }}/linux-{{ platform_arch }}/helm"
+      become: false
+
+    - name: Install Helm
+      ansible.builtin.copy:
+        src: "{{ download_dir }}/helm-{{ tool_versions.helm }}/linux-{{ platform_arch }}/helm"
+        dest: /usr/local/bin/helm
+        remote_src: true
+        mode: "0755"
+
+    - name: Detect the installed Go version
+      ansible.builtin.command: go version
+      changed_when: false
+      failed_when: false
+      register: installed_go
+
+    - name: Download Go
+      ansible.builtin.get_url:
+        url: "https://go.dev/dl/{{ go_archive }}"
+        dest: "{{ download_dir }}/{{ go_archive }}"
+        checksum: "sha256:{{ tool_checksums.go[platform_arch] }}"
+        mode: "0600"
+      become: false
+      when: >-
+        installed_go.rc != 0 or
+        (installed_go.stdout | regex_search('go([0-9.]+)', '\1') | first)
+        is version(tool_versions.go, '<')
+
+    - name: Remove an older Go installation
+      ansible.builtin.file:
+        path: /usr/local/go
+        state: absent
+      when: >-
+        installed_go.rc != 0 or
+        (installed_go.stdout | regex_search('go([0-9.]+)', '\1') | first)
+        is version(tool_versions.go, '<')
+
+    - name: Install Go
+      ansible.builtin.unarchive:
+        src: "{{ download_dir }}/{{ go_archive }}"
+        dest: /usr/local
+        remote_src: true
+      when: >-
+        installed_go.rc != 0 or
+        (installed_go.stdout | regex_search('go([0-9.]+)', '\1') | first)
+        is version(tool_versions.go, '<')
+
+    - name: Make Go available on the system path
+      ansible.builtin.file:
+        src: /usr/local/go/bin/{{ item }}
+        dest: /usr/local/bin/{{ item }}
+        state: link
+      loop:
+        - go
+        - gofmt
+      when: >-
+        installed_go.rc != 0 or
+        (installed_go.stdout | regex_search('go([0-9.]+)', '\1') | first)
+        is version(tool_versions.go, '<')

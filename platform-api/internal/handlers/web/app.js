@@ -1,0 +1,131 @@
+const endpoints = {
+  health: "/health",
+  hostname: "/hostname",
+  memory: "/memory",
+  uptime: "/uptime",
+  network: "/network",
+  filesystem: "/filesystem",
+};
+
+function escapeHtml(value) {
+  // Runtime values are rendered into HTML templates below, so escape them first.
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  })[character]);
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) {
+    return "0 B";
+  }
+
+  const units = ["B", "KiB", "MiB", "GiB", "TiB"];
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / 1024 ** exponent;
+
+  return `${value.toFixed(value >= 10 || exponent === 0 ? 0 : 1)} ${units[exponent]}`;
+}
+
+function formatDuration(seconds) {
+  const totalSeconds = Math.floor(seconds);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+  if (days > 0) {
+    return `${days}d ${hours}h`;
+  }
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  return `${minutes}m`;
+}
+
+function setStatus(healthy) {
+  const status = document.querySelector("#status");
+  status.textContent = healthy ? "API healthy" : "API unavailable";
+  status.className = `status ${healthy ? "status-healthy" : "status-error"}`;
+}
+
+function renderFilesystems(filesystems) {
+  document.querySelector("#filesystem-count").textContent =
+    `${filesystems.length} visible mounts`;
+
+  const rows = filesystems.slice(0, 8).map((filesystem) => `
+    <tr>
+      <td>${escapeHtml(filesystem.mount_point)}</td>
+      <td>${escapeHtml(filesystem.filesystem_type)}</td>
+      <td>${formatBytes(filesystem.used_bytes)} / ${formatBytes(filesystem.total_bytes)}</td>
+      <td>${formatBytes(filesystem.available_bytes)}</td>
+      <td>${filesystem.usage_percent.toFixed(1)}%</td>
+    </tr>
+  `);
+
+  document.querySelector("#filesystems").innerHTML = rows.join("");
+}
+
+function renderNetwork(interfaces) {
+  const cards = interfaces.map((networkInterface) => {
+    const state = networkInterface.up ? "up" : "down";
+    const addresses = networkInterface.addresses.length
+      ? networkInterface.addresses.map(escapeHtml).join("<br>")
+      : "No addresses";
+
+    return `
+      <article class="interface-card">
+        <div class="interface-heading">
+          <strong>${escapeHtml(networkInterface.name)}</strong>
+          <span class="interface-state interface-${state}">${state}</span>
+        </div>
+        <p>${addresses}</p>
+        <p class="detail">MTU ${networkInterface.mtu}</p>
+      </article>
+    `;
+  });
+
+  document.querySelector("#network").innerHTML = cards.join("");
+}
+
+async function loadDashboard() {
+  try {
+    const responses = await Promise.all(
+      Object.values(endpoints).map(async (endpoint) => {
+        const response = await fetch(endpoint);
+        if (!response.ok) {
+          throw new Error(`${endpoint} returned ${response.status}`);
+        }
+
+        return response.json();
+      }),
+    );
+
+    const [health, hostname, memory, uptime, network, filesystem] = responses;
+    const addressCount = network.interfaces.reduce(
+      (count, networkInterface) => count + networkInterface.addresses.length,
+      0,
+    );
+
+    setStatus(health.status === "ok");
+    document.querySelector("#hostname").textContent = hostname.hostname;
+    document.querySelector("#memory").textContent = formatBytes(memory.available_kb * 1024);
+    document.querySelector("#memory-detail").textContent =
+      `${formatBytes(memory.free_kb * 1024)} free of ${formatBytes(memory.total_kb * 1024)}`;
+    document.querySelector("#uptime").textContent = formatDuration(uptime.seconds);
+    document.querySelector("#interfaces").textContent = network.interfaces.length;
+    document.querySelector("#addresses").textContent = `${addressCount} assigned addresses`;
+
+    renderFilesystems(filesystem.filesystems);
+    renderNetwork(network.interfaces);
+  } catch (error) {
+    setStatus(false);
+    console.error("Unable to load dashboard", error);
+  }
+}
+
+loadDashboard();

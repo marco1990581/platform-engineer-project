@@ -1,0 +1,178 @@
+:root {
+  color: #e8edf7;
+  background: #101522;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+main {
+  margin: 0 auto;
+  max-width: 1120px;
+  padding: 48px 24px 64px;
+}
+
+.hero,
+.section-heading,
+.interface-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.hero {
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  letter-spacing: -0.05em;
+}
+
+h2 {
+  font-size: 1.3rem;
+}
+
+.eyebrow,
+.label {
+  color: #8da1c6;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.subtitle,
+.detail,
+.interface-card p {
+  color: #aab7d0;
+  margin-top: 8px;
+}
+
+.status,
+.interface-state {
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.status-loading {
+  background: #2b3549;
+}
+
+.status-healthy,
+.interface-up {
+  background: #143f35;
+  color: #79e2bd;
+}
+
+.status-error,
+.interface-down {
+  background: #4a2631;
+  color: #ffabb9;
+}
+
+.metrics,
+.network-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.card,
+.panel,
+.interface-card {
+  background: #192133;
+  border: 1px solid #2d3a55;
+  border-radius: 12px;
+}
+
+.card {
+  min-height: 132px;
+  padding: 20px;
+}
+
+.value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+}
+
+.panel {
+  margin-top: 24px;
+  padding: 24px;
+}
+
+.table-container {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  min-width: 680px;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid #2d3a55;
+  padding: 12px;
+  text-align: left;
+}
+
+th {
+  color: #8da1c6;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+
+td {
+  font-size: 0.9rem;
+}
+
+.network-grid {
+  margin-top: 20px;
+}
+
+.interface-card {
+  padding: 16px;
+}
+
+.interface-card p {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  main {
+    padding: 32px 16px 48px;
+  }
+
+  .hero,
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+}

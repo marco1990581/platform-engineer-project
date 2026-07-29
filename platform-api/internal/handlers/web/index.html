@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Platform Lab Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <div>
+          <p class="eyebrow">LOCAL PLATFORM LAB</p>
+          <h1>Runtime dashboard</h1>
+          <p class="subtitle">Read-only information from the API's current Linux runtime.</p>
+        </div>
+        <span id="status" class="status status-loading">Loading</span>
+      </header>
+
+      <section class="metrics" aria-label="Runtime summary">
+        <article class="card">
+          <p class="label">Hostname</p>
+          <p id="hostname" class="value">-</p>
+        </article>
+        <article class="card">
+          <p class="label">Memory available</p>
+          <p id="memory" class="value">-</p>
+          <p id="memory-detail" class="detail"></p>
+        </article>
+        <article class="card">
+          <p class="label">Uptime</p>
+          <p id="uptime" class="value">-</p>
+        </article>
+        <article class="card">
+          <p class="label">Network interfaces</p>
+          <p id="interfaces" class="value">-</p>
+          <p id="addresses" class="detail"></p>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">STORAGE</p>
+            <h2>Mounted filesystems</h2>
+          </div>
+          <span id="filesystem-count" class="detail"></span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Mount point</th>
+                <th>Type</th>
+                <th>Used</th>
+                <th>Available</th>
+                <th>Usage</th>
+              </tr>
+            </thead>
+            <tbody id="filesystems"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">NETWORK</p>
+            <h2>Interfaces</h2>
+          </div>
+        </div>
+        <div id="network" class="network-grid"></div>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

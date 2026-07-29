@@ -1,0 +1,16 @@
+.git
+.gitignore
+
+README.md
+
+terraform/
+platform-lab/
+
+*.log
+*.tmp
+
+bin/
+dist/
+
+.vscode/
+.idea/

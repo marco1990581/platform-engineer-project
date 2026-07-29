@@ -1,0 +1,20 @@
+# Local task instructions
+/prompt.txt
+
+# Go build artifacts
+/platform-api/platform-api
+/platform-api/*.test
+
+# Generated host inspection artifacts
+/platform-api/cmd/api/*.tar
+/platform-api/internal/system/*.save
+
+# Terraform local state and downloaded providers
+/platform-lab/terraform/.terraform/
+/platform-lab/terraform/*.tfstate
+/platform-lab/terraform/*.tfstate.*
+
+# Editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
