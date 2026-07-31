@@ -1,7 +1,7 @@
+package auth
 
-
+import "github.com/marcosalbano/platform-api/internal/models"
 
 type UserRepository interface {
-	GetByUserName(username string) (*models.User,error)
-
+	GetByUsername(username string) (*models.User, error)
 }
