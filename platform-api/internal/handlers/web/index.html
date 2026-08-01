@@ -7,7 +7,38 @@
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <main>
+  <div id="login-screen">
+
+  <h1>Platform API</h1>
+
+  <p>Linux Administration Dashboard</p>
+
+  <form id="login-form">
+
+    <label for="username">Username</label><br>
+    <input
+        id="username"
+        type="text"
+        autocomplete="username"
+    ><br><br>
+
+    <label for="password">Password</label><br>
+    <input
+        id="password"
+        type="password"
+        autocomplete="current-password"
+    ><br><br>
+
+    <button type="submit">
+        Login
+    </button>
+
+    <p id="login-error"></p>
+
+  </form>
+
+</div>
+    <main id="dashboard" hidden >
       <header class="hero">
         <div>
           <p class="eyebrow">LOCAL PLATFORM LAB</p>
