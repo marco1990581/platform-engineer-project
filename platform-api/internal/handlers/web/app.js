@@ -1,4 +1,5 @@
 const endpoints = {
+  let authorizationHeader = "";
   health: "/health",
   hostname: "/hostname",
   memory: "/memory",
@@ -6,6 +7,22 @@ const endpoints = {
   network: "/network",
   filesystem: "/filesystem",
 };
+
+async function authenticate(username, password) {
+
+    authorizationHeader =
+        "Basic " + btoa(username + ":" + password);
+
+    const response = await fetch("/health", {
+        headers: {
+            Authorization: authorizationHeader,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error("Authentication failed");
+    }
+}
 
 function escapeHtml(value) {
   // Runtime values are rendered into HTML templates below, so escape them first.
@@ -129,3 +146,40 @@ async function loadDashboard() {
 }
 
 loadDashboard();
+document
+    .querySelector("#login-form")
+    .addEventListener("submit", async (event) => {
+
+        event.preventDefault();
+
+        const username =
+            document.querySelector("#username").value;
+
+        const password =
+            document.querySelector("#password").value;
+
+        const error =
+            document.querySelector("#login-error");
+
+        try {
+
+            await authenticate(username, password);
+
+            document
+                .querySelector("#login-screen")
+                .hidden = true;
+
+            document
+                .querySelector("#dashboard")
+                .hidden = false;
+
+            await loadDashboard();
+
+        } catch {
+
+            error.textContent =
+                "Invalid username or password.";
+
+        }
+
+    });

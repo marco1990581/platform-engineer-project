@@ -69,12 +69,9 @@ func New(authMiddleware *middleware.AuthMiddleware) http.Handler {
 	// Dashboard
 	// -----------------------------
 
-	mux.Handle(
-		"/",
-		authMiddleware.Handler(
-			handlers.DashboardHandler(),
-		),
-	)
+	// El frontend es público.
+	// Los datos que consume continúan protegidos por autenticación.
+	mux.Handle("/", handlers.DashboardHandler())
 
 	return mux
 }
