@@ -6,15 +6,13 @@ import (
 	"net/http"
 
 	"github.com/marcosalbano/platform-api/internal/auth"
-	"github.com/marcosalbano/platform-api/internal/handlers"
 	"github.com/marcosalbano/platform-api/internal/middleware"
+	"github.com/marcosalbano/platform-api/internal/router"
 )
 
 func main() {
 
-	// --------------------------------------------------
-	// Authentication subsystem
-	// --------------------------------------------------
+	// Authentication
 
 	repository := auth.NewFileRepository("configs/users.json")
 
@@ -22,72 +20,13 @@ func main() {
 
 	authMiddleware := middleware.NewAuthMiddleware(authenticator)
 
-	// --------------------------------------------------
-	// Public endpoints
-	// --------------------------------------------------
+	// HTTP Router
 
-	http.HandleFunc("/health", handlers.HealthHandler)
-
-	// --------------------------------------------------
-	// Protected API endpoints
-	// --------------------------------------------------
-
-	http.Handle(
-		"/hostname",
-		authMiddleware.Handler(
-			http.HandlerFunc(handlers.HostnameHandler),
-		),
-	)
-
-	http.Handle(
-		"/memory",
-		authMiddleware.Handler(
-			http.HandlerFunc(handlers.MemoryHandler),
-		),
-	)
-
-	http.Handle(
-		"/uptime",
-		authMiddleware.Handler(
-			http.HandlerFunc(handlers.UptimeHandler),
-		),
-	)
-
-	http.Handle(
-		"/system",
-		authMiddleware.Handler(
-			http.HandlerFunc(handlers.SystemHandler),
-		),
-	)
-
-	http.Handle(
-		"/network",
-		authMiddleware.Handler(
-			http.HandlerFunc(handlers.NetworkHandler),
-		),
-	)
-
-	http.Handle(
-		"/filesystem",
-		authMiddleware.Handler(
-			http.HandlerFunc(handlers.FilesystemHandler),
-		),
-	)
-
-	// --------------------------------------------------
-	// Dashboard
-	// --------------------------------------------------
-
-	http.Handle(
-		"/",
-		authMiddleware.Handler(
-			handlers.DashboardHandler(),
-		),
-	)
+	r := router.New(authMiddleware)
 
 	fmt.Println("Platform API listening on :8081")
 
-	if err := http.ListenAndServe(":8081", nil); err != nil {
+	if err := http.ListenAndServe(":8081", r); err != nil {
 		log.Fatal(err)
 	}
 }
