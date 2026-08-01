@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
 
 	"github.com/marcosalbano/platform-api/internal/models"
 )
@@ -66,19 +67,24 @@ func (r *FileRepository) SaveUsers(users []models.User) error {
 		"",
 		"    ",
 	)
-
 	if err != nil {
-
 		return err
-
 	}
 
+	// Obtiene el directorio del archivo.
+	dir := filepath.Dir(r.path)
+
+	// Lo crea si no existe.
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	// Escribe el archivo con permisos 0600.
 	return os.WriteFile(
 		r.path,
 		data,
 		0600,
 	)
-
 }
 
 // AddUser agrega un usuario.
@@ -105,5 +111,22 @@ func (r *FileRepository) AddUser(user models.User) error {
 	users = append(users, user)
 
 	return r.SaveUsers(users)
+
+}
+
+func (r *FileRepository) GetByUsername(username string) (*models.User, error) {
+
+	users, err := r.LoadUsers()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, user := range users {
+		if user.Username == username {
+			return &user, nil
+		}
+	}
+
+	return nil, errors.New("user not found")
 
 }

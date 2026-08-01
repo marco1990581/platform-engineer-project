@@ -5,6 +5,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/marcosalbano/platform-api/internal/auth"
+	"github.com/marcosalbano/platform-api/internal/models"
+
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/term"
 )
@@ -16,13 +19,11 @@ func main() {
 	fmt.Println("===================================")
 	fmt.Println()
 
-	// Pedimos el nombre de usuario.
-	fmt.Print("Username: ")
-
 	var username string
+
+	fmt.Print("Username: ")
 	fmt.Scanln(&username)
 
-	// Pedimos la contraseña sin mostrarla.
 	fmt.Print("Password: ")
 
 	password, err := term.ReadPassword(int(os.Stdin.Fd()))
@@ -32,7 +33,6 @@ func main() {
 
 	fmt.Println()
 
-	// Confirmación.
 	fmt.Print("Confirm password: ")
 
 	confirmPassword, err := term.ReadPassword(int(os.Stdin.Fd()))
@@ -42,14 +42,10 @@ func main() {
 
 	fmt.Println()
 
-	// Verificamos que ambas coincidan.
 	if string(password) != string(confirmPassword) {
-
-		log.Fatal("Passwords do not match")
-
+		log.Fatal("passwords do not match")
 	}
 
-	// Generamos el hash bcrypt.
 	hash, err := bcrypt.GenerateFromPassword(
 		password,
 		bcrypt.DefaultCost,
@@ -59,16 +55,23 @@ func main() {
 		log.Fatal(err)
 	}
 
+	repository := auth.NewFileRepository("configs/users.json")
+
+	user := models.User{
+
+		Username: username,
+
+		PasswordHash: string(hash),
+
+		Role: "admin",
+	}
+
+	err = repository.AddUser(user)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	fmt.Println()
-	fmt.Println("User created successfully!")
-	fmt.Println()
-
-	fmt.Println("Username:")
-	fmt.Println(username)
-
-	fmt.Println()
-
-	fmt.Println("Password Hash:")
-	fmt.Println(string(hash))
-
+	fmt.Println("✔ User created successfully")
 }
