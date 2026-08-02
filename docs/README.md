@@ -57,6 +57,7 @@ before continuing.
 
 ```bash
 cd platform-api
+go run ./cmd/create-user
 go run ./cmd/api
 ```
 
@@ -64,14 +65,20 @@ Open <http://localhost:8081/> for the dashboard, or call an endpoint:
 
 ```bash
 curl http://localhost:8081/health
-curl http://localhost:8081/filesystem
+curl --user <username>:<password> http://localhost:8081/filesystem
 ```
 
-To run the API as a container:
+`create-user` writes to `configs/users.json`, which is deliberately ignored by
+Git. To use a different location, set `PLATFORM_API_USERS_FILE` to an absolute
+path for both commands.
+
+To run the API as a container, mount the user store read-only:
 
 ```bash
 docker build -t platform-api .
-docker run --rm -p 8081:8081 platform-api
+docker run --rm -p 8081:8081 \
+  --mount type=bind,src="$(pwd)/configs/users.json",dst=/app/config/users.json,readonly \
+  platform-api
 ```
 
 ### 3. Create the local Kubernetes cluster

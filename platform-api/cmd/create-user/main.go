@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/marcosalbano/platform-api/internal/auth"
+	"github.com/marcosalbano/platform-api/internal/config"
 	"github.com/marcosalbano/platform-api/internal/models"
 
 	"golang.org/x/crypto/bcrypt"
@@ -55,7 +56,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	repository := auth.NewFileRepository("configs/users.json")
+	repository := auth.NewFileRepository(config.UsersFilePath())
 
 	user := models.User{
 

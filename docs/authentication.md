@@ -49,6 +49,17 @@ Only bcrypt hashes are persisted.
 
 ---
 
+## User-store configuration
+
+The API and `create-user` command read `PLATFORM_API_USERS_FILE` when it is
+set. Otherwise, they use `configs/users.json` for local development.
+
+The user store is runtime configuration and must not be committed. In
+containers, mount it read-only at the path selected by
+`PLATFORM_API_USERS_FILE`.
+
+---
+
 ## Authentication diagnostics
 
 The authentication backend logs the outcome of these steps:

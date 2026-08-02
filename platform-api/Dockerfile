@@ -1,7 +1,7 @@
 # ==========================
 # Build Stage
 # ==========================
-FROM golang:1.24 AS builder
+FROM golang:1.25.0 AS builder
 
 WORKDIR /app
 
@@ -27,9 +27,12 @@ WORKDIR /app
 # Certificados para HTTPS
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /app/config
 
 COPY --from=builder /app/platform-api .
+
+ENV PLATFORM_API_USERS_FILE=/app/config/users.json
 
 EXPOSE 8081
 

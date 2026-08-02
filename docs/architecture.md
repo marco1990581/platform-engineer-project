@@ -43,6 +43,7 @@ Linux
 cmd/
 
 internal/
+    config/
 
 configs/
 
@@ -58,6 +59,10 @@ docs/
 ### auth
 
 Authentication subsystem.
+
+### config
+
+Runtime configuration resolution.
 
 ### middleware
 
@@ -97,4 +102,3 @@ Security
 - TLS
 - Rate limiting
 - API Keys
-

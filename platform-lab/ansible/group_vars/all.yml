@@ -4,7 +4,7 @@ tool_versions:
   kubectl: "v1.34.0"
   kind: "v0.30.0"
   helm: "v3.19.0"
-  go: "1.24.0"
+  go: "1.25.0"
 
 architecture_map:
   x86_64: amd64
@@ -25,7 +25,7 @@ tool_checksums:
     amd64: "a7f81ce08007091b86d8bd696eb4d86b8d0f2e1b9f6c714be62f82f96a594496"
     arm64: "440cf7add0aee27ebc93fada965523c1dc2e0ab340d4348da2215737fc0d76ad"
   go:
-    amd64: "dea9ca38a0b852a74e81c26134671af7c0fbe65d81b0dc1c5bfe22cf7d4c8858"
-    arm64: "c3fa6d16ffa261091a5617145553c71d21435ce547e44cc6dfb7470865527cc7"
+    amd64: "2852af0cb20a13139b3448992e69b868e50ed0f8a1e5940ee1de9e19a123b613"
+    arm64: "05de75d6994a2783699815ee553bd5a9327d8b79991de36e38b66862782f54ae"
 
 docker_key_fingerprint: "9DC858229FC7DD38854AE2D88D81803C0EBFCD88"

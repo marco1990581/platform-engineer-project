@@ -1,5 +1,6 @@
+let authorizationHeader = "";
+
 const endpoints = {
-  let authorizationHeader = "";
   health: "/health",
   hostname: "/hostname",
   memory: "/memory",
@@ -9,19 +10,28 @@ const endpoints = {
 };
 
 async function authenticate(username, password) {
+  const candidateAuthorizationHeader =
+    `Basic ${btoa(`${username}:${password}`)}`;
 
-    authorizationHeader =
-        "Basic " + btoa(username + ":" + password);
+  const response = await fetch("/hostname", {
+    headers: {
+      Authorization: candidateAuthorizationHeader,
+    },
+  });
 
-    const response = await fetch("/health", {
-        headers: {
-            Authorization: authorizationHeader,
-        },
-    });
+  if (!response.ok) {
+    throw new Error("Authentication failed");
+  }
 
-    if (!response.ok) {
-        throw new Error("Authentication failed");
-    }
+  authorizationHeader = candidateAuthorizationHeader;
+}
+
+function authenticatedFetch(endpoint) {
+  return fetch(endpoint, {
+    headers: {
+      Authorization: authorizationHeader,
+    },
+  });
 }
 
 function escapeHtml(value) {
@@ -113,7 +123,7 @@ async function loadDashboard() {
   try {
     const responses = await Promise.all(
       Object.values(endpoints).map(async (endpoint) => {
-        const response = await fetch(endpoint);
+        const response = await authenticatedFetch(endpoint);
         if (!response.ok) {
           throw new Error(`${endpoint} returned ${response.status}`);
         }
@@ -145,7 +155,6 @@ async function loadDashboard() {
   }
 }
 
-loadDashboard();
 document
     .querySelector("#login-form")
     .addEventListener("submit", async (event) => {

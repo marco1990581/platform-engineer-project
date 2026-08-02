@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/marcosalbano/platform-api/internal/auth"
+	"github.com/marcosalbano/platform-api/internal/config"
 	"github.com/marcosalbano/platform-api/internal/middleware"
 	"github.com/marcosalbano/platform-api/internal/router"
 )
@@ -14,7 +15,7 @@ func main() {
 
 	// Authentication
 
-	repository := auth.NewFileRepository("configs/users.json")
+	repository := auth.NewFileRepository(config.UsersFilePath())
 
 	authenticator := auth.NewBasicAuthenticator(repository)
 
