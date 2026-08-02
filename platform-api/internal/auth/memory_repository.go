@@ -1,13 +1,14 @@
 package auth
 
 import (
-	"errors"
+	"sync"
 
 	"github.com/marcosalbano/platform-api/internal/models"
 )
 
 type MemoryRepository struct {
 	users map[string]models.User
+	mu    sync.RWMutex
 }
 
 func NewMemoryRepository() *MemoryRepository {
@@ -20,12 +21,14 @@ func NewMemoryRepository() *MemoryRepository {
 }
 
 func (m *MemoryRepository) GetByUsername(username string) (*models.User, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 
 	user, ok := m.users[username]
 
 	if !ok {
 
-		return nil, errors.New("user not found")
+		return nil, ErrUserNotFound
 
 	}
 
@@ -34,6 +37,8 @@ func (m *MemoryRepository) GetByUsername(username string) (*models.User, error) 
 }
 
 func (m *MemoryRepository) Add(user models.User) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	m.users[user.Username] = user
 

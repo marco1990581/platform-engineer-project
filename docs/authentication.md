@@ -65,11 +65,11 @@ containers, mount it read-only at the path selected by
 The authentication backend logs the outcome of these steps:
 
 - loading and parsing the configured user file
-- looking up the requested username
-- comparing the submitted password with bcrypt
+- looking up an account
+- detecting user-store errors
 
-Logs include the configured file path and username where needed for
-troubleshooting. Passwords and bcrypt hashes are never logged.
+Logs include the configured file path where needed for troubleshooting.
+Passwords, bcrypt hashes, and usernames are never logged.
 
 ---
 
@@ -83,6 +83,11 @@ Current implementation:
 
 - Memory Repository
 - File Repository
+
+The file repository writes a canonical `username`, `password_hash`, and `role`
+JSON schema. It accepts the legacy `PasswordHash` field while existing local
+stores are migrated by the next write. Writes are protected by an exclusive
+lock and atomic replacement; the file is created with `0600` permissions.
 
 Future implementations:
 

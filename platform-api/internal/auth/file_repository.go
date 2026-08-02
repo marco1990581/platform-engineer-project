@@ -2,10 +2,12 @@ package auth
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
+	"syscall"
 
 	"github.com/marcosalbano/platform-api/internal/models"
 )
@@ -17,6 +19,7 @@ import (
 // de la aplicación.
 type FileRepository struct {
 	path string
+	mu   sync.Mutex
 }
 
 // NewFileRepository crea un nuevo repositorio basado
@@ -72,6 +75,15 @@ func (r *FileRepository) LoadUsers() ([]models.User, error) {
 
 // SaveUsers guarda todos los usuarios.
 func (r *FileRepository) SaveUsers(users []models.User) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	return r.withExclusiveLock(func() error {
+		return r.saveUsers(users)
+	})
+}
+
+func (r *FileRepository) saveUsers(users []models.User) error {
 
 	data, err := json.MarshalIndent(
 		users,
@@ -82,68 +94,121 @@ func (r *FileRepository) SaveUsers(users []models.User) error {
 		return err
 	}
 
-	// Obtiene el directorio del archivo.
 	dir := filepath.Dir(r.path)
 
-	// Lo crea si no existe.
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
+		return fmt.Errorf("create user store directory: %w", err)
 	}
 
-	// Escribe el archivo con permisos 0600.
-	return os.WriteFile(
-		r.path,
-		data,
-		0600,
-	)
+	tempFile, err := os.CreateTemp(dir, ".users-*.json")
+	if err != nil {
+		return fmt.Errorf("create temporary user store: %w", err)
+	}
+	tempPath := tempFile.Name()
+	defer os.Remove(tempPath)
+
+	if err := tempFile.Chmod(0600); err != nil {
+		tempFile.Close()
+		return fmt.Errorf("set temporary user store permissions: %w", err)
+	}
+
+	if _, err := tempFile.Write(data); err != nil {
+		tempFile.Close()
+		return fmt.Errorf("write temporary user store: %w", err)
+	}
+	if err := tempFile.Sync(); err != nil {
+		tempFile.Close()
+		return fmt.Errorf("sync temporary user store: %w", err)
+	}
+	if err := tempFile.Close(); err != nil {
+		return fmt.Errorf("close temporary user store: %w", err)
+	}
+
+	if err := os.Rename(tempPath, r.path); err != nil {
+		return fmt.Errorf("replace user store: %w", err)
+	}
+
+	directory, err := os.Open(dir)
+	if err != nil {
+		return fmt.Errorf("open user store directory: %w", err)
+	}
+	defer directory.Close()
+
+	if err := directory.Sync(); err != nil {
+		return fmt.Errorf("sync user store directory: %w", err)
+	}
+
+	return nil
+
 }
 
 // AddUser agrega un usuario.
 func (r *FileRepository) AddUser(user models.User) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
-	users, err := r.LoadUsers()
+	return r.withExclusiveLock(func() error {
+		users, err := r.LoadUsers()
 
-	if err != nil {
+		if err != nil {
 
-		return err
-
-	}
-
-	for _, existing := range users {
-
-		if existing.Username == user.Username {
-
-			return errors.New("user already exists")
+			return err
 
 		}
 
+		for _, existing := range users {
+
+			if existing.Username == user.Username {
+
+				return fmt.Errorf("user %q already exists", user.Username)
+
+			}
+		}
+
+		users = append(users, user)
+
+		return r.saveUsers(users)
+	})
+
+}
+
+func (r *FileRepository) withExclusiveLock(operation func() error) error {
+	dir := filepath.Dir(r.path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("create user store directory: %w", err)
 	}
 
-	users = append(users, user)
+	lockFile, err := os.OpenFile(r.path+".lock", os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil {
+		return fmt.Errorf("open user store lock: %w", err)
+	}
+	defer lockFile.Close()
 
-	return r.SaveUsers(users)
+	if err := syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX); err != nil {
+		return fmt.Errorf("lock user store: %w", err)
+	}
+	defer syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
 
+	return operation()
 }
 
 func (r *FileRepository) GetByUsername(username string) (*models.User, error) {
 
 	users, err := r.LoadUsers()
 	if err != nil {
-		log.Printf("auth: user lookup failed username=%q: %v", username, err)
+		log.Printf("auth: user lookup failed: %v", err)
 
 		return nil, err
 	}
 
 	for _, user := range users {
 		if user.Username == username {
-			log.Printf("auth: user lookup succeeded username=%q", username)
-
 			return &user, nil
 		}
 	}
 
-	log.Printf("auth: user lookup found no match username=%q", username)
+	log.Print("auth: user lookup found no match")
 
-	return nil, errors.New("user not found")
+	return nil, ErrUserNotFound
 
 }

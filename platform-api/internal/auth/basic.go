@@ -2,10 +2,13 @@ package auth
 
 import (
 	"errors"
-	"log"
 
 	"github.com/marcosalbano/platform-api/internal/models"
 )
+
+var ErrInvalidCredentials = errors.New("invalid credentials")
+
+const dummyPasswordHash = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
 
 type BasicAuthenticator struct {
 	repository UserRepository
@@ -21,27 +24,31 @@ func (a *BasicAuthenticator) Authenticate(
 	username string,
 	password string,
 ) (*models.User, error) {
+	if a == nil || a.repository == nil {
+		return nil, errors.New("authenticate: repository is not configured")
+	}
 
 	user, err := a.repository.GetByUsername(username)
 
 	if err != nil {
-		log.Printf("auth: authentication failed during user lookup username=%q: %v", username, err)
+		if errors.Is(err, ErrUserNotFound) {
+			// Equalize lookup failures with password failures to avoid user enumeration by timing.
+			_ = ComparePassword(dummyPasswordHash, password)
+			return nil, ErrInvalidCredentials
+		}
 
 		return nil, err
 	}
-
-	err = ComparePassword(
-		user.PasswordHash,
-		password,
-	)
-
-	if err != nil {
-		log.Printf("auth: bcrypt password comparison failed username=%q", username)
-
-		return nil, errors.New("invalid password")
+	if user == nil {
+		return nil, ErrInvalidCredentials
 	}
 
-	log.Printf("auth: bcrypt password comparison succeeded username=%q", username)
+	if err := ComparePassword(
+		user.PasswordHash,
+		password,
+	); err != nil {
+		return nil, ErrInvalidCredentials
+	}
 
 	return user, nil
 }

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/marcosalbano/platform-api/internal/auth"
 	"github.com/marcosalbano/platform-api/internal/config"
@@ -23,7 +25,13 @@ func main() {
 	var username string
 
 	fmt.Print("Username: ")
-	fmt.Scanln(&username)
+	if _, err := fmt.Fscanln(os.Stdin, &username); err != nil {
+		log.Fatal("read username: ", err)
+	}
+	username = strings.TrimSpace(username)
+	if username == "" {
+		log.Fatal("username must not be empty")
+	}
 
 	fmt.Print("Password: ")
 
@@ -31,6 +39,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer clearPassword(password)
 
 	fmt.Println()
 
@@ -40,10 +49,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer clearPassword(confirmPassword)
 
 	fmt.Println()
 
-	if string(password) != string(confirmPassword) {
+	if !bytes.Equal(password, confirmPassword) {
 		log.Fatal("passwords do not match")
 	}
 
@@ -75,4 +85,10 @@ func main() {
 
 	fmt.Println()
 	fmt.Println("✔ User created successfully")
+}
+
+func clearPassword(password []byte) {
+	for index := range password {
+		password[index] = 0
+	}
 }

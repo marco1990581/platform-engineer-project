@@ -35,18 +35,12 @@ func (m *AuthMiddleware) Handler(next http.Handler) http.Handler {
 		authorization := r.Header.Get("Authorization")
 
 		if authorization == "" {
-
-			w.Header().Set("WWW-Authenticate", `Basic realm="Platform API"`)
-
-			http.Error(w, "missing authorization header", http.StatusUnauthorized)
-
+			writeUnauthorized(w)
 			return
 		}
 
 		if !strings.HasPrefix(authorization, "Basic ") {
-
-			http.Error(w, "invalid authentication method", http.StatusUnauthorized)
-
+			writeUnauthorized(w)
 			return
 		}
 
@@ -60,9 +54,7 @@ func (m *AuthMiddleware) Handler(next http.Handler) http.Handler {
 		)
 
 		if err != nil {
-
-			http.Error(w, "invalid authorization header", http.StatusUnauthorized)
-
+			writeUnauthorized(w)
 			return
 		}
 
@@ -73,9 +65,7 @@ func (m *AuthMiddleware) Handler(next http.Handler) http.Handler {
 		)
 
 		if len(credentials) != 2 {
-
-			http.Error(w, "invalid credentials", http.StatusUnauthorized)
-
+			writeUnauthorized(w)
 			return
 		}
 
@@ -88,9 +78,7 @@ func (m *AuthMiddleware) Handler(next http.Handler) http.Handler {
 		)
 
 		if err != nil {
-
-			http.Error(w, "authentication failed", http.StatusUnauthorized)
-
+			writeUnauthorized(w)
 			return
 		}
 
@@ -107,4 +95,9 @@ func (m *AuthMiddleware) Handler(next http.Handler) http.Handler {
 
 	})
 
+}
+
+func writeUnauthorized(w http.ResponseWriter) {
+	w.Header().Set("WWW-Authenticate", `Basic realm="Platform API"`)
+	http.Error(w, "authentication failed", http.StatusUnauthorized)
 }
