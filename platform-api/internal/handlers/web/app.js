@@ -9,9 +9,19 @@ const endpoints = {
   filesystem: "/filesystem",
 };
 
+function basicAuthorization(username, password) {
+  const credentials = new TextEncoder().encode(`${username}:${password}`);
+  let binaryCredentials = "";
+
+  for (const byte of credentials) {
+    binaryCredentials += String.fromCharCode(byte);
+  }
+
+  return `Basic ${btoa(binaryCredentials)}`;
+}
+
 async function authenticate(username, password) {
-  const candidateAuthorizationHeader =
-    `Basic ${btoa(`${username}:${password}`)}`;
+  const candidateAuthorizationHeader = basicAuthorization(username, password);
 
   const response = await fetch("/hostname", {
     headers: {
@@ -27,6 +37,10 @@ async function authenticate(username, password) {
 }
 
 function authenticatedFetch(endpoint) {
+  if (!authorizationHeader) {
+    throw new Error("Authentication is required");
+  }
+
   return fetch(endpoint, {
     headers: {
       Authorization: authorizationHeader,
@@ -80,6 +94,20 @@ function setStatus(healthy) {
   status.className = `status ${healthy ? "status-healthy" : "status-error"}`;
 }
 
+function showLoginError(message) {
+  const error = document.querySelector("#login-error");
+  error.textContent = message;
+  error.hidden = false;
+}
+
+function showLogin() {
+  authorizationHeader = "";
+  document.querySelector("#dashboard").hidden = true;
+  document.querySelector("#login-screen").hidden = false;
+  document.querySelector("#password").value = "";
+  document.querySelector("#username").focus();
+}
+
 function renderFilesystems(filesystems) {
   document.querySelector("#filesystem-count").textContent =
     `${filesystems.length} visible mounts`;
@@ -120,6 +148,9 @@ function renderNetwork(interfaces) {
 }
 
 async function loadDashboard() {
+  const dashboardError = document.querySelector("#dashboard-error");
+  dashboardError.hidden = true;
+
   try {
     const responses = await Promise.all(
       Object.values(endpoints).map(async (endpoint) => {
@@ -151,44 +182,36 @@ async function loadDashboard() {
     renderNetwork(network.interfaces);
   } catch (error) {
     setStatus(false);
+    dashboardError.textContent = "Unable to load runtime information. Please try again.";
+    dashboardError.hidden = false;
     console.error("Unable to load dashboard", error);
   }
 }
 
-document
-    .querySelector("#login-form")
-    .addEventListener("submit", async (event) => {
+document.querySelector("#login-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
 
-        event.preventDefault();
+  const username = document.querySelector("#username").value;
+  const password = document.querySelector("#password").value;
+  const loginButton = document.querySelector("#login-button");
+  const loginError = document.querySelector("#login-error");
 
-        const username =
-            document.querySelector("#username").value;
+  loginError.hidden = true;
+  loginButton.disabled = true;
 
-        const password =
-            document.querySelector("#password").value;
+  try {
+    await authenticate(username, password);
 
-        const error =
-            document.querySelector("#login-error");
+    document.querySelector("#login-screen").hidden = true;
+    document.querySelector("#dashboard").hidden = false;
+    document.querySelector("#dashboard").focus();
 
-        try {
+    await loadDashboard();
+  } catch {
+    showLoginError("Invalid username or password.");
+  } finally {
+    loginButton.disabled = false;
+  }
+});
 
-            await authenticate(username, password);
-
-            document
-                .querySelector("#login-screen")
-                .hidden = true;
-
-            document
-                .querySelector("#dashboard")
-                .hidden = false;
-
-            await loadDashboard();
-
-        } catch {
-
-            error.textContent =
-                "Invalid username or password.";
-
-        }
-
-    });
+document.querySelector("#logout-button").addEventListener("click", showLogin);
