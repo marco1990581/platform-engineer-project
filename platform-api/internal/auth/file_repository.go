@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -31,15 +32,21 @@ func NewFileRepository(path string) *FileRepository {
 // LoadUsers carga todos los usuarios desde disco.
 func (r *FileRepository) LoadUsers() ([]models.User, error) {
 
+	log.Printf("auth: loading user file path=%q", r.path)
+
 	data, err := os.ReadFile(r.path)
 
 	if err != nil {
 
 		if os.IsNotExist(err) {
 
+			log.Printf("auth: user file not found path=%q", r.path)
+
 			return []models.User{}, nil
 
 		}
+
+		log.Printf("auth: failed to read user file path=%q: %v", r.path, err)
 
 		return nil, err
 
@@ -51,9 +58,13 @@ func (r *FileRepository) LoadUsers() ([]models.User, error) {
 
 	if err != nil {
 
+		log.Printf("auth: failed to parse user file path=%q: %v", r.path, err)
+
 		return nil, err
 
 	}
+
+	log.Printf("auth: loaded %d user(s) from path=%q", len(users), r.path)
 
 	return users, nil
 
@@ -118,14 +129,20 @@ func (r *FileRepository) GetByUsername(username string) (*models.User, error) {
 
 	users, err := r.LoadUsers()
 	if err != nil {
+		log.Printf("auth: user lookup failed username=%q: %v", username, err)
+
 		return nil, err
 	}
 
 	for _, user := range users {
 		if user.Username == username {
+			log.Printf("auth: user lookup succeeded username=%q", username)
+
 			return &user, nil
 		}
 	}
+
+	log.Printf("auth: user lookup found no match username=%q", username)
 
 	return nil, errors.New("user not found")
 

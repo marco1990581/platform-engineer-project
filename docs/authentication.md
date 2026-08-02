@@ -49,6 +49,19 @@ Only bcrypt hashes are persisted.
 
 ---
 
+## Authentication diagnostics
+
+The authentication backend logs the outcome of these steps:
+
+- loading and parsing the configured user file
+- looking up the requested username
+- comparing the submitted password with bcrypt
+
+Logs include the configured file path and username where needed for
+troubleshooting. Passwords and bcrypt hashes are never logged.
+
+---
+
 ### Repository
 
 Responsible for loading users.

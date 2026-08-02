@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"log"
 
 	"github.com/marcosalbano/platform-api/internal/models"
 )
@@ -24,6 +25,8 @@ func (a *BasicAuthenticator) Authenticate(
 	user, err := a.repository.GetByUsername(username)
 
 	if err != nil {
+		log.Printf("auth: authentication failed during user lookup username=%q: %v", username, err)
+
 		return nil, err
 	}
 
@@ -33,8 +36,12 @@ func (a *BasicAuthenticator) Authenticate(
 	)
 
 	if err != nil {
+		log.Printf("auth: bcrypt password comparison failed username=%q", username)
+
 		return nil, errors.New("invalid password")
 	}
+
+	log.Printf("auth: bcrypt password comparison succeeded username=%q", username)
 
 	return user, nil
 }

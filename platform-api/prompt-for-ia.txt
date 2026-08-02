@@ -1,0 +1,176 @@
+Estamos continuando el desarrollo de mi proyecto "Platform API", un proyecto personal para practicar ingeniería de plataformas y backend en Go.
+
+## Objetivo general
+
+Construir una API para administración Linux siguiendo buenas prácticas de arquitectura, código limpio y Git, evitando soluciones rápidas.
+
+La idea es que el proyecto pueda evolucionar en el futuro hacia:
+
+- API REST
+- autenticación
+- auditoría
+- RBAC
+- Docker
+- Kubernetes
+- Prometheus
+- Grafana
+- Keycloak
+- PostgreSQL
+- etc.
+
+Quiero que avancemos paso a paso como si estuviéramos desarrollando un producto real.
+
+No quiero grandes saltos.
+
+Siempre:
+
+- un objetivo
+- implementación
+- pruebas
+- git
+- documentación
+
+## Arquitectura actual
+
+platform-api/
+
+cmd/
+    api/
+    create-user/
+
+internal/
+
+auth/
+    basic.go
+    bcrypt.go
+    file_repository.go
+    memory_repository.go
+    repository.go
+
+handlers/
+
+middleware/
+
+models/
+
+router/
+
+system/
+
+configs/
+
+users.json
+
+docs/
+
+authentication.md
+architecture.md
+
+## Lo que ya funciona
+
+✔ bcrypt
+
+✔ create-user
+
+✔ users.json
+
+✔ FileRepository
+
+✔ BasicAuthenticator
+
+✔ AuthMiddleware
+
+✔ Router separado del main
+
+✔ Dashboard HTML/CSS/JS
+
+✔ API protegida mediante HTTP Basic
+
+✔ endpoints:
+
+/health
+/hostname
+/memory
+/network
+/filesystem
+/system
+/uptime
+
+✔ QEMU con port forwarding
+
+localhost:8081 -> VM:8081
+
+Desde el host funciona:
+
+curl http://localhost:8081/health
+
+y responde
+
+{"status":"ok"}
+
+## Problema actual
+
+El login HTML ya existe.
+
+El navegador envía correctamente:
+
+Authorization: Basic ...
+
+Lo confirmé desde Firefox.
+
+Sin embargo:
+
+curl -u marcos:cornucopia http://localhost:8081/filesystem
+
+devuelve
+
+401 Unauthorized
+
+authentication failed
+
+Por lo tanto el problema YA NO está en:
+
+- JavaScript
+- router
+- middleware
+- QEMU
+- networking
+
+Todo apunta al backend de autenticación.
+
+Ya revisamos:
+
+basic.go
+
+file_repository.go
+
+y GetByUsername()
+
+La siguiente tarea es depurar el backend agregando logs para descubrir si falla:
+
+- lectura del users.json
+- búsqueda del usuario
+- comparación bcrypt
+
+No quiero cambiar el diseño todavía.
+
+Primero quiero encontrar exactamente dónde falla.
+
+## Forma de trabajar
+
+Quiero hacerlo como si fuera un code review.
+
+No me des soluciones enormes.
+
+Vamos paso por paso.
+
+Cuando terminemos un objetivo:
+
+1. probar
+2. git add
+3. git commit
+4. git push
+
+Siempre documentando los cambios importantes.
+
+Cuando encuentres el problema, seguimos con el login del dashboard y después mejoramos la interfaz.
