@@ -250,6 +250,27 @@ td {
   margin-top: 20px;
 }
 
+.system-report {
+  margin-top: 20px;
+}
+
+.system-report summary {
+  color: #cbd6eb;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.system-report pre {
+  background: #101522;
+  border: 1px solid #2d3a55;
+  border-radius: 8px;
+  color: #cbd6eb;
+  margin: 12px 0 0;
+  max-height: 360px;
+  overflow: auto;
+  padding: 16px;
+}
+
 .interface-card {
   padding: 16px;
 }

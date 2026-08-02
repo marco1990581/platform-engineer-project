@@ -7,6 +7,7 @@ const endpoints = {
   uptime: "/uptime",
   network: "/network",
   filesystem: "/filesystem",
+  system: "/system",
 };
 
 function basicAuthorization(username, password) {
@@ -147,6 +148,10 @@ function renderNetwork(interfaces) {
   document.querySelector("#network").innerHTML = cards.join("");
 }
 
+function renderSystemReport(systemInfo) {
+  document.querySelector("#system-report").textContent = JSON.stringify(systemInfo, null, 2);
+}
+
 async function loadDashboard() {
   const dashboardError = document.querySelector("#dashboard-error");
   dashboardError.hidden = true;
@@ -163,7 +168,7 @@ async function loadDashboard() {
       }),
     );
 
-    const [health, hostname, memory, uptime, network, filesystem] = responses;
+    const [health, hostname, memory, uptime, network, filesystem, system] = responses;
     const addressCount = network.interfaces.reduce(
       (count, networkInterface) => count + networkInterface.addresses.length,
       0,
@@ -180,6 +185,7 @@ async function loadDashboard() {
 
     renderFilesystems(filesystem.filesystems);
     renderNetwork(network.interfaces);
+    renderSystemReport(system);
   } catch (error) {
     setStatus(false);
     dashboardError.textContent = "Unable to load runtime information. Please try again.";
