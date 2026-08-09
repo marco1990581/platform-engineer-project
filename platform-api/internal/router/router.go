@@ -24,44 +24,56 @@ func New(authMiddleware *middleware.AuthMiddleware) http.Handler {
 	// -----------------------------
 
 	mux.Handle(
-		"/hostname",
+		"/api/v1/hostname",
 		authMiddleware.Handler(
-			http.HandlerFunc(handlers.HostnameHandler),
+			middleware.Authorize("system", "read")(
+				http.HandlerFunc(handlers.HostnameHandler),
+			),
 		),
 	)
 
 	mux.Handle(
-		"/memory",
+		"/api/v1/memory",
 		authMiddleware.Handler(
-			http.HandlerFunc(handlers.MemoryHandler),
+			middleware.Authorize("system", "read")(
+				http.HandlerFunc(handlers.MemoryHandler),
+			),
 		),
 	)
 
 	mux.Handle(
-		"/uptime",
+		"/api/v1/uptime",
 		authMiddleware.Handler(
-			http.HandlerFunc(handlers.UptimeHandler),
+			middleware.Authorize("system", "read")(
+				http.HandlerFunc(handlers.UptimeHandler),
+			),
 		),
 	)
 
 	mux.Handle(
-		"/system",
+		"/api/v1/system",
 		authMiddleware.Handler(
-			http.HandlerFunc(handlers.SystemHandler),
+			middleware.Authorize("system", "read")(
+				http.HandlerFunc(handlers.SystemHandler),
+			),
 		),
 	)
 
 	mux.Handle(
-		"/network",
+		"/api/v1/network",
 		authMiddleware.Handler(
-			http.HandlerFunc(handlers.NetworkHandler),
+			middleware.Authorize("network", "read")(
+				http.HandlerFunc(handlers.NetworkHandler),
+			),
 		),
 	)
 
 	mux.Handle(
-		"/filesystem",
+		"/api/v1/filesystem",
 		authMiddleware.Handler(
-			http.HandlerFunc(handlers.FilesystemHandler),
+			middleware.Authorize("filesystem", "read")(
+				http.HandlerFunc(handlers.FilesystemHandler),
+			),
 		),
 	)
 

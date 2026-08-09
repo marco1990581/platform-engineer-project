@@ -2,12 +2,12 @@ let authorizationHeader = "";
 
 const endpoints = {
   health: "/health",
-  hostname: "/hostname",
-  memory: "/memory",
-  uptime: "/uptime",
-  network: "/network",
-  filesystem: "/filesystem",
-  system: "/system",
+  hostname: "/api/v1/hostname",
+  memory: "/api/v1/memory",
+  uptime: "/api/v1/uptime",
+  network: "/api/v1/network",
+  filesystem: "/api/v1/filesystem",
+  system: "/api/v1/system",
 };
 
 function basicAuthorization(username, password) {
@@ -24,7 +24,7 @@ function basicAuthorization(username, password) {
 async function authenticate(username, password) {
   const candidateAuthorizationHeader = basicAuthorization(username, password);
 
-  const response = await fetch("/hostname", {
+  const response = await fetch("/api/v1/hostname", {
     headers: {
       Authorization: candidateAuthorizationHeader,
     },

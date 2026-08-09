@@ -32,7 +32,7 @@ Open <http://localhost:8081/> or call the API directly:
 
 ```bash
 curl http://localhost:8081/health
-curl --user <username>:<password> http://localhost:8081/filesystem
+curl --user <username>:<password> http://localhost:8081/api/v1/filesystem
 ```
 
 The user store defaults to `configs/users.json` and is ignored by Git. Set
@@ -74,8 +74,8 @@ kubectl get nodes
 |---|---|
 | `GET /` | Dashboard |
 | `GET /health` | Liveness response |
-| `GET /hostname`, `/memory`, `/uptime` | Basic runtime information |
-| `GET /network`, `/filesystem`, `/system` | Network, storage, and combined runtime information |
+| `GET /api/v1/hostname`, `/api/v1/memory`, `/api/v1/uptime` | Basic runtime information |
+| `GET /api/v1/network`, `/api/v1/filesystem`, `/api/v1/system` | Network, storage, and combined runtime information |
 
 The dashboard is public, but its runtime-data requests require HTTP Basic
 authentication. `/health` is also public.
