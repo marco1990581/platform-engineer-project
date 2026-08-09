@@ -15,6 +15,10 @@ Authentication
 
 ↓
 
+Authorization
+
+↓
+
 Repository
 
 ↓
@@ -76,6 +80,12 @@ Domain entities.
 
 Linux information providers.
 
+### authz
+
+Role-based authorization. A static role-to-permission policy and an
+`Enforce(role, resource, action)` check, kept separate from `auth`
+(authentication answers "who are you"; `authz` answers "what can you do").
+
 ### handlers
 
 HTTP handlers.
@@ -89,7 +99,12 @@ Authentication
 - JSON repository
 - SQLite
 - JWT
-- RBAC
+
+Authorization
+
+- ✅ Static role-based policy (`admin`, `viewer`)
+- Persisted/manageable policy store
+- Fine-grained per-user permissions
 
 Observability
 
