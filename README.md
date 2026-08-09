@@ -1,172 +1,105 @@
 # Platform Engineer Lab
 
-A local, no-cloud-cost platform engineering project. It combines a Go runtime
-API, an embedded dashboard, Terraform, Ansible, Docker, and Kind into a
-reproducible learning environment.
+A local-first platform engineering lab built with Go, Docker, Terraform,
+Ansible, and Kind. It exposes Linux runtime information through a small API
+and dashboard, then provides the tooling to run the surrounding environment
+without a cloud account.
 
-## What it demonstrates
+## Included
 
-- A containerized Go API for Linux runtime information.
-- A dependency-free, read-only browser dashboard.
-- Infrastructure provisioning with Terraform and the Docker provider.
-- Declarative environment bootstrap with Ansible.
-- A local Kubernetes cluster with Kind, `kubectl`, and Helm.
-- GitHub Actions validation for code, infrastructure, and the Docker image.
-
-## Architecture
-
-```text
-Local Linux host
-  ├── Ansible bootstrap
-  │     └── Docker, Terraform, Go, kubectl, Kind, Helm
-  ├── Terraform
-  │     └── Docker network and Nginx example
-  ├── Kind cluster: platform-lab
-  │     └── single control-plane node
-  └── platform-api
-        ├── JSON API on :8081
-        └── read-only dashboard at /
-```
+- Go API with HTTP Basic authentication and a JSON user store
+- Read-only dashboard for runtime information
+- Docker image and local Terraform example
+- Ansible bootstrap for Docker, Go, Terraform, Kind, `kubectl`, and Helm
+- Kind cluster configuration and GitHub Actions validation
 
 ## Requirements
 
-- Debian or Ubuntu Linux with `sudo`.
-- At least 2 CPU cores.
-- 4 GiB RAM and 10 GiB free disk are recommended before creating a Kind
-  cluster.
+- Debian or Ubuntu with `sudo`
+- Docker and Go, or use the bootstrap script below
+- 2 CPU cores; 4 GiB RAM and 10 GiB disk are recommended before creating a
+  Kind cluster
 
-The bootstrap installs tools only; it does not start a Kubernetes cluster.
+## Run the API
 
-## Quick start
+```bash
+cd platform-api
+go run ./cmd/create-user
+go run ./cmd/api
+```
 
-### 1. Bootstrap the local tools
+Open <http://localhost:8081/> or call the API directly:
+
+```bash
+curl http://localhost:8081/health
+curl --user <username>:<password> http://localhost:8081/api/v1/filesystem
+```
+
+The user store defaults to `configs/users.json` and is ignored by Git. Set
+`PLATFORM_API_USERS_FILE` to an absolute path to use a different store.
+
+### Run with Docker
+
+```bash
+cd platform-api
+docker build -t platform-api .
+docker run --rm -p 8081:8081 \
+  --mount type=bind,src="$(pwd)/configs/users.json",dst=/app/config/users.json,readonly \
+  platform-api
+```
+
+## Local tooling
+
+Bootstrap the local tools:
 
 ```bash
 bash platform-lab/scripts/install.sh
 ```
 
-The shell entry point installs `ansible-core`, then Ansible installs Git,
-Docker, Terraform, `kubectl`, Kind, Helm, and Go. Tool URLs, pinned versions,
-SHA-256 checksums, and the Docker signing-key fingerprint are defined in
-`platform-lab/ansible/group_vars/all.yml`.
+The script installs `ansible-core`; Ansible then installs the remaining
+tools. Download URLs, versions, checksums, and the Docker signing-key
+fingerprint are maintained in `platform-lab/ansible/group_vars/all.yml`.
+Sign out and back in if the script adds your user to the `docker` group.
 
-If the bootstrap adds your user to the `docker` group, sign out and back in
-before continuing.
-
-### 2. Run the API
-
-```bash
-cd platform-api
-go run ./cmd/api
-```
-
-Open <http://localhost:8081/> for the dashboard, or call an endpoint:
-
-```bash
-curl http://localhost:8081/health
-curl http://localhost:8081/filesystem
-```
-
-To run the API as a container:
-
-```bash
-docker build -t platform-api .
-docker run --rm -p 8081:8081 platform-api
-```
-
-### 3. Create the local Kubernetes cluster
+Create the optional local Kind cluster:
 
 ```bash
 bash platform-lab/scripts/create-kind-cluster.sh
 kubectl get nodes
 ```
 
-The cluster has one control-plane node to reduce local resource use. Remove it
-when you are finished:
-
-```bash
-kind delete cluster --name platform-lab
-```
-
-### 4. Try the Terraform example
-
-```bash
-terraform -chdir=platform-lab/terraform init
-terraform -chdir=platform-lab/terraform apply
-```
-
-This creates a local Docker network and Nginx container on port `8080`. Remove
-it with:
-
-```bash
-terraform -chdir=platform-lab/terraform destroy
-```
-
 ## API
 
 | Endpoint | Description |
 |---|---|
-| `GET /` | Read-only runtime dashboard. |
-| `GET /health` | API health status. |
-| `GET /hostname` | Current hostname. |
-| `GET /memory` | Total, free, and available memory. |
-| `GET /uptime` | Runtime uptime. |
-| `GET /network` | Network interfaces and addresses. |
-| `GET /filesystem` | Mounted filesystems and capacity statistics. |
-| `GET /system` | Aggregate hostname, memory, uptime, and network data. |
+| `GET /` | Dashboard |
+| `GET /health` | Liveness response |
+| `GET /api/v1/hostname`, `/api/v1/memory`, `/api/v1/uptime` | Basic runtime information |
+| `GET /api/v1/network`, `/api/v1/filesystem`, `/api/v1/system` | Network, storage, and combined runtime information |
 
-`GET /filesystem` returns capacity values in bytes:
+The dashboard is public, but its runtime-data requests require HTTP Basic
+authentication. `/health` is also public.
 
-```json
-{
-  "filesystems": [
-    {
-      "filesystem_type": "overlay",
-      "mount_point": "/",
-      "total_bytes": 42949672960,
-      "used_bytes": 8589934592,
-      "available_bytes": 34359738368,
-      "usage_percent": 20
-    }
-  ]
-}
-```
-
-## Scope and safety
-
-This project is intentionally local-first: Terraform uses Docker, and
-Kubernetes runs in Kind rather than a paid cloud provider. The API is
-Linux-oriented and reports only information visible to its own process or
-container. It does not inspect host services.
-
-Do not expose the API or dashboard publicly without authentication and an
-appropriate network policy, because they reveal runtime metadata.
-
-## Continuous integration
-
-Run the full local validation suite with:
+## Validation
 
 ```bash
 bash scripts/ci.sh
 ```
 
-GitHub Actions runs the same command for every push and pull request. It checks
-Go formatting and builds, Bash and Ansible syntax, Terraform formatting and
-validation, and the API Docker image build. Deployment is deferred until the
-API has Kubernetes manifests and a target environment.
+GitHub Actions runs the same validation on pushes and pull requests.
 
-## Repository layout
+## Layout
 
 | Path | Purpose |
 |---|---|
-| `platform-api/` | Go API, embedded dashboard, and Dockerfile. |
-| `platform-lab/ansible/` | Local Ansible bootstrap playbook and pinned tool metadata. |
-| `platform-lab/kubernetes/kind/` | Single-node Kind cluster definition. |
-| `platform-lab/terraform/` | Local Docker network and Nginx example. |
-| `scripts/ci.sh` | Local validation command used by GitHub Actions. |
+| `platform-api/` | Go API, dashboard, and Dockerfile |
+| `platform-lab/ansible/` | Local tool bootstrap |
+| `platform-lab/kubernetes/kind/` | Kind cluster configuration |
+| `platform-lab/terraform/` | Docker network and Nginx example |
+| `docs/` | Architecture and authentication notes |
 
-## Next steps
+## Safety
 
-- Add handler and provider tests.
-- Deploy `platform-api` to the local Kind cluster.
-- Add a dashboard view for local tool and cluster readiness.
+The API is Linux-specific and reports information visible to its process or
+container. Keep it on a trusted local network; do not expose it publicly
+without TLS, authentication, and network controls.

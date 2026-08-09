@@ -1,10 +1,9 @@
 .git
 .gitignore
-
 README.md
-
 terraform/
 platform-lab/
+configs/users.json
 
 *.log
 *.tmp

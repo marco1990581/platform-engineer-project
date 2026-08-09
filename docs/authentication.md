@@ -1,0 +1,134 @@
+# Authentication Subsystem
+
+## Overview
+
+The Platform API authentication subsystem has been designed around
+separation of responsibilities.
+
+The objective is to provide a secure authentication mechanism that
+can evolve over time without changing the HTTP layer.
+
+Current authentication method:
+
+- HTTP Basic Authentication
+- bcrypt password hashing
+- Repository abstraction
+- Middleware-based authentication
+
+---
+
+## Architecture
+
+```
+HTTP Request
+      │
+      ▼
+Authentication Middleware
+      │
+      ▼
+Basic Authenticator
+      │
+      ▼
+User Repository
+      │
+      ▼
+JSON Storage (future SQLite)
+```
+
+---
+
+## Components
+
+### User
+
+Represents an authenticated user.
+
+Passwords are never stored in plaintext.
+
+Only bcrypt hashes are persisted.
+
+---
+
+## User-store configuration
+
+The API and `create-user` command read `PLATFORM_API_USERS_FILE` when it is
+set. Otherwise, they use `configs/users.json` for local development.
+
+The user store is runtime configuration and must not be committed. In
+containers, mount it read-only at the path selected by
+`PLATFORM_API_USERS_FILE`.
+
+---
+
+## Authentication diagnostics
+
+The authentication backend logs the outcome of these steps:
+
+- loading and parsing the configured user file
+- looking up an account
+- detecting user-store errors
+
+Logs include the configured file path where needed for troubleshooting.
+Passwords, bcrypt hashes, and usernames are never logged.
+
+---
+
+### Repository
+
+Responsible for loading users.
+
+The authenticator never knows where users are stored.
+
+Current implementation:
+
+- Memory Repository
+- File Repository
+
+The file repository writes a canonical `username`, `password_hash`, and `role`
+JSON schema. It accepts the legacy `PasswordHash` field while existing local
+stores are migrated by the next write. Writes are protected by an exclusive
+lock and atomic replacement; the file is created with `0600` permissions.
+
+Future implementations:
+
+- SQLite
+- LDAP
+- Keycloak
+
+---
+
+### Authenticator
+
+Responsible only for validating credentials.
+
+Responsibilities:
+
+- Validate password
+- Compare bcrypt hashes
+- Return authenticated user
+
+---
+
+### Middleware
+
+Responsible for protecting HTTP endpoints.
+
+If authentication succeeds:
+
+- User is attached to request context.
+
+Otherwise:
+
+- HTTP 401 Unauthorized is returned.
+
+---
+
+## Security
+
+Passwords are never:
+
+- stored in plaintext
+- logged
+- returned to the client
+
+Only bcrypt hashes are persisted.

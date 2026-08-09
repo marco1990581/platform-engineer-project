@@ -4,6 +4,7 @@
 # Go build artifacts
 /platform-api/platform-api
 /platform-api/*.test
+/platform-api/configs/users.json
 
 # Generated host inspection artifacts
 /platform-api/cmd/api/*.tar

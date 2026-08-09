@@ -7,15 +7,55 @@
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <main>
+    <div id="login-screen" class="login-screen">
+      <main class="login-card">
+        <p class="eyebrow">LOCAL PLATFORM LAB</p>
+        <h1>Platform API</h1>
+        <p class="subtitle">Sign in to view Linux runtime information.</p>
+
+        <form id="login-form" class="login-form">
+          <div class="field">
+            <label for="username">Username</label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              autocomplete="username"
+              required
+              autofocus
+            >
+          </div>
+
+          <div class="field">
+            <label for="password">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            >
+          </div>
+
+          <button id="login-button" type="submit">Sign in</button>
+          <p id="login-error" class="form-error" role="alert" hidden></p>
+        </form>
+      </main>
+    </div>
+
+    <main id="dashboard" hidden tabindex="-1">
       <header class="hero">
         <div>
           <p class="eyebrow">LOCAL PLATFORM LAB</p>
           <h1>Runtime dashboard</h1>
           <p class="subtitle">Read-only information from the API's current Linux runtime.</p>
         </div>
-        <span id="status" class="status status-loading">Loading</span>
+        <div class="header-actions">
+          <span id="status" class="status status-loading" aria-live="polite">Loading</span>
+          <button id="logout-button" class="button-secondary" type="button">Sign out</button>
+        </div>
       </header>
+      <p id="dashboard-error" class="form-error" role="alert" hidden></p>
 
       <section class="metrics" aria-label="Runtime summary">
         <article class="card">
@@ -70,6 +110,19 @@
           </div>
         </div>
         <div id="network" class="network-grid"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">API RESPONSE</p>
+            <h2>Combined system report</h2>
+          </div>
+        </div>
+        <details class="system-report">
+          <summary>View <code>GET /system</code> response</summary>
+          <pre id="system-report"></pre>
+        </details>
       </section>
     </main>
     <script src="/app.js"></script>
